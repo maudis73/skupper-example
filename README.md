@@ -265,47 +265,47 @@ install the broker.
 _**Console for ns1:**_
 
 ~~~ shell
-oc apply -f broker
+oc apply -f broker1.yaml
 ~~~
 
 _Sample output:_
 
 ~~~ console
-oc apply -f broker
-deployment.apps/broker created
+oc apply -f broker1.yaml
+activemqartemis.broker.amq.io/broker1 created
 ~~~
 
 ## Step 8: Expose the message broker
 
-In the private namespace, use `skupper expose` to expose the
+In the ns1 namespace, use `skupper expose` to expose the
 broker on the Skupper network.
 
-Then, in the public namespace, use `kubectl get service/broker`
+Then, in the ns2 namespace, use `oc get service/broker1`
 to check that the service appears after a moment.
 
-_**Console for private:**_
+_**Console for ns1:**_
 
 ~~~ shell
-skupper expose deployment/broker --port 5672
+skupper expose statefulset/broker1-ss --port 61616
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ skupper expose deployment/broker --port 5672
-deployment broker exposed as broker
+skupper expose statefulset/broker1-ss --port 61616
+statefulset broker1-ss exposed as broker1-ss
 ~~~
 
 _**Console for public:**_
 
 ~~~ shell
-kubectl get service/broker
+oc get service/broker1
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ kubectl get service/broker
+$ oc get service/broker1
 NAME     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
 broker   ClusterIP   10.100.58.95   <none>        5672/TCP   2s
 ~~~
@@ -317,7 +317,7 @@ In the public namespace, use `kubectl run` to run the client.
 _**Console for public:**_
 
 ~~~ shell
-kubectl run client --attach --rm --restart Never --image quay.io/skupper/activemq-example-client --env SERVER=broker
+oc new-app quay.io/mdiscepo/simple-shell@sha256:e2036d219b69580f2dff57426754597b28dd7f67010df538dfe614fa4082e3fb
 ~~~
 
 _Sample output:_
