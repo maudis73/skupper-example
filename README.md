@@ -6,7 +6,7 @@
 
 * [Overview](#overview)
 * [Prerequisites](#prerequisites)
-* [Step 1: Configure separate console sessions](#step-1-configure-separate-console-sessions)xx
+* [Step 1: Configure separate console sessions](#step-1-configure-separate-console-sessions)
 * [Step 2: Access your clusters](#step-2-access-your-clusters)
 * [Step 3: Set up your namespaces](#step-3-set-up-your-namespaces)
 * [Step 4: Install Skupper in your namespaces](#step-4-install-skupper-in-your-namespaces)
@@ -14,7 +14,8 @@
 * [Step 6: Link your namespaces](#step-6-link-your-namespaces)
 * [Step 7: Deploy the message broker](#step-7-deploy-the-message-broker)
 * [Step 8: Expose the message broker](#step-8-expose-the-message-broker)
-* [Step 9: Run the client](#step-9-run-the-client)
+* [Step 9: Deploy the client](#step-9-deploy-the-client)
+* [Step 9: Run the client](#srep-10-run-the-client)
 * [Accessing the web console](#accessing-the-web-console)
 * [Cleaning up](#cleaning-up)
 
@@ -309,7 +310,7 @@ NAME        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)     AGE
 ns-broker   ClusterIP   172.30.97.216   <none>        61616/TCP   2m43s~~~
 ~~~
 
-## Step 9: Run the client
+## Step 9: Deploy the client
 
 In the public namespace, use `oc new-app` to deploy the client.
 
@@ -333,6 +334,27 @@ $ oc new-app quay.io/mdiscepo/simple-shell@sha256:e2036d219b69580f2dff5742675459
 --> Success
     Run 'oc status' to view your app.
 ~~~
+
+## Run the client
+
+_**Console for simple-shell on ns2:**_
+
+~~~ shell
+artemis queue stat --url tcp://ns-broker:61616
+~~~
+
+_Sample output:_
+
+~~~ console
+$ artemis queue stat --url tcp://ns-broker:61616
+Connection brokerURL = tcp://ns-broker:61616
+|NAME                     |ADDRESS                  |CONSUMER_COUNT |MESSAGE_COUNT |MESSAGES_ADDED |DELIVERING_COUNT |MESSAGES_ACKED |SCHEDULED_COUNT |ROUTING_TYPE |
+|DLQ                      |DLQ                      |0              |0             |0              |0                |0              |0               |ANYCAST      |
+|ExpiryQueue              |ExpiryQueue              |0              |0             |0              |0                |0              |0               |ANYCAST      |
+|TEST                     |TEST                     |0              |0             |0              |0                |0              |0               |ANYCAST      |
+|activemq.management.e7a18022-280b-45a6-a72b-fda18f884fde|activemq.management.e7a18022-280b-45a6-a72b-fda18f884fde|1              |0             |0              |0                |0              |0               |MULTICAST    |
+~~~
+
 
 ## Accessing the web console
 
@@ -367,8 +389,6 @@ $ oc get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
 
 Navigate to `<console-url>` in your browser.  When prompted, log
 in as user `admin` and enter the password.
-
-
 
 
 
