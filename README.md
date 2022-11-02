@@ -1,168 +1,448 @@
-# skupper-example
-A command-line tool for setting up and managing Skupper docker installations
+# Accessing an ActiveMQ message broker using Skupper
 
-Note: If you are using Fedora 32, use the https://fedoramagazine.org/docker-and-fedora-32/ procedure to install Docker.
+[![main](https://github.com/skupperproject/skupper-example-activemq/actions/workflows/main.yaml/badge.svg)](https://github.com/skupperproject/skupper-example-activemq/actions/workflows/main.yaml)
 
-To create the `skupper-docker` command:
+#### Use public cloud resources to process data from a private message broker
 
-1. Clone this repo.
-2. Run the following command in the repo root directory:
-```
- make build-cmd
-```
-After this command is completed, you can create a skupper site:
-```
- ./skupper-docker init
-```
 
-To troubleshoot issues:
+This example is part of a [suite of examples][examples] showing the
+different ways you can use [Skupper][website] to connect services
+across cloud providers, data centers, and edge sites.
 
-1. Run `docker ps` to view the containers:
+[website]: https://skupper.io/
+[examples]: https://skupper.io/examples/index.html
 
-```
-$ docker ps
 
-CONTAINER ID        IMAGE                                       COMMAND                  CREATED             STATUS              PORTS                                                 NAMES
-3c3b93460544        quay.io/skupper/skupper-docker-controller   "/app/controller"        50 minutes ago      Up 50 minutes                                                             skupper-service-controller
-d8c9edc2f4a0        quay.io/skupper/qdrouterd                   "/home/qdrouterd/bin…"   50 minutes ago      Up 50 minutes       5671-5672/tcp, 9090/tcp, 45671/tcp, 55671-55672/tcp   skupper-router
-```
+#### Contents
 
-2. Log into the router container:
+* [Overview](#overview)
+* [Prerequisites](#prerequisites)
+* [Step 1: Configure separate console sessions](#step-1-configure-separate-console-sessions)
+* [Step 2: Access your clusters](#step-2-access-your-clusters)
+* [Step 3: Set up your namespaces](#step-3-set-up-your-namespaces)
+* [Step 4: Install Skupper in your namespaces](#step-4-install-skupper-in-your-namespaces)
+* [Step 5: Check the status of your namespaces](#step-5-check-the-status-of-your-namespaces)
+* [Step 6: Link your namespaces](#step-6-link-your-namespaces)
+* [Step 7: Deploy the message broker](#step-7-deploy-the-message-broker)
+* [Step 8: Expose the message broker](#step-8-expose-the-message-broker)
+* [Step 9: Run the client](#step-9-run-the-client)
+* [Accessing the web console](#accessing-the-web-console)
+* [Cleaning up](#cleaning-up)
 
-```
-$ docker exec -it skupper-router /bin/bash
-```
+## Overview
 
-3. Check the router stats:
+This example is a simple messaging application that shows how you
+can use Skupper to access an ActiveMQ broker at a remote site
+without exposing it to the public internet.
 
-```
-[root@skupper-router bin]# qdstat -c
-2020-10-15 14:05:05.776017 UTC
-localhost.localdomain-skupper-router
+It contains two services:
 
-Connections
-  id  host              container                                               role    dir  security                         authentication            tenant  last dlv      uptime
-  ==========================================================================================================================================================================================
-  2   172.18.0.3:53014  mpsp0EF792H2RNTiqhfpIm09C1X6UY1-2mnucktxUPTPbSflwMClaA  normal  in   TLSv1.3(TLS_AES_128_GCM_SHA256)  CN=skupper-router(x.509)          000:00:00:04  000:00:53:02
-  5   127.0.0.1:58938   b66430bc-45ed-4b8e-b48d-70e25e63f8e3                    normal  in   no-security                      no-auth                           000:00:00:00  000:00:00:00
+* An ActiveMQ broker running in a private data center.  The broker
+  has a queue named "notifications".
 
-```
+* An AMQP client running in the public cloud.  It sends 10 messages
+  to "notifications" and then receives them back.
 
-This shows typical output for a successfully instantiated skupper site.
-If you do not see similar output, check your Docker network configuration, for example firewall settings.
+For the broker, this example uses the [Apache ActiveMQ
+Artemis][artemis] image from [ArtemisCloud.io][artemiscloud].  The
+client is a simple [Quarkus][quarkus] application.
 
-To attach a container to the Skupper network:
+The example uses two Kubernetes namespaces, "private" and "public",
+to represent the private data center and public cloud.
 
-1. Start the container such as the following:
+[artemis]: https://activemq.apache.org/components/artemis/
+[artemiscloud]: https://artemiscloud.io/
+[quarkus]: https://quarkus.io/
 
-```
-$ docker run --name tcp-go-echo-server quay.io/skupper/tcp-go-echo
-```
+## Prerequisites
 
-2. Define a service
 
-```
-$ ./skupper-docker service create tcp-go-echo 9090
-```
+* The `kubectl` command-line tool, version 1.15 or later
+  ([installation guide][install-kubectl])
 
-3. Assign the target container to the service
+* The `skupper` command-line tool, the latest version ([installation
+  guide][install-skupper])
 
-```
-$ ./skupper-docker bind tcp-go-echo container tcp-go-echo-server
-```
+* Access to at least one Kubernetes cluster, from any provider you
+  choose
 
-4. Check the exposed service
+[install-kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[install-skupper]: https://skupper.io/install/index.html
 
-```
-$ ./skupper-docker list-exposed
-Services exposed through Skupper:
-    tcp-go-echo (tcp port 9090) with targets
-      => internal.skupper.io/container name=tcp-go-echo-server
 
-Aliases for services exposed through Skupper:
-    172.18.0.4 tcp-go-echo
-```
+## Step 1: Configure separate console sessions
 
-To attach a local host process on `linux` to the Skupper network:
+Skupper is designed for use with multiple namespaces, typically on
+different clusters.  The `skupper` command uses your
+[kubeconfig][kubeconfig] and current context to select the
+namespace where it operates.
 
-1. Start the process such as the following (assumes golang installed):
+[kubeconfig]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 
-```
-$ git clone https://github.com/skupperproject/skupper-example-tcp-echo.git
-$ cd skupper-example-tcp-go-echo
-$ go run ./tcp-go-echo.go
-```
+Your kubeconfig is stored in a file in your home directory.  The
+`skupper` and `kubectl` commands use the `KUBECONFIG` environment
+variable to locate it.
 
-2. Define a service
+A single kubeconfig supports only one active context per user.
+Since you will be using multiple contexts at once in this
+exercise, you need to create distinct kubeconfigs.
 
-```
-$ ./skupper-docker service create tcp-go-echo 9090
-```
+Start a console session for each of your namespaces.  Set the
+`KUBECONFIG` environment variable to a different path in each
+session.
 
-3. Assign the target process to the service
+_**Console for public:**_
 
-```
-$ ./skupper-docker bind tcp-go-echo host-service myechoserver
-```
+~~~ shell
+export KUBECONFIG=~/.kube/config-public
+~~~
 
-4. Check the exposed service
+_**Console for private:**_
 
-```
-$ ./skupper-docker list-exposed
-Services exposed through Skupper:
-    tcp-go-echo (tcp port 9090) with targets
-      => internal.skupper.io/host-service name=myechoserver:172.17.0.1
+~~~ shell
+export KUBECONFIG=~/.kube/config-private
+~~~
 
-Aliases for services exposed through Skupper:
-    172.18.0.4 tcp-go-echo
-```
+## Step 2: Access your clusters
 
-To attach a local host process on `Mac or Windows` to the Skupper network:
+The methods for accessing your clusters vary by Kubernetes
+provider. Find the instructions for your chosen providers and use
+them to authenticate and configure access for each console
+session.  See the following links for more information:
 
-1. Start the process and define a service as shown above
+* [Minikube](https://skupper.io/start/minikube.html)
+* [Amazon Elastic Kubernetes Service (EKS)](https://skupper.io/start/eks.html)
+* [Azure Kubernetes Service (AKS)](https://skupper.io/start/aks.html)
+* [Google Kubernetes Engine (GKE)](https://skupper.io/start/gke.html)
+* [IBM Kubernetes Service](https://skupper.io/start/ibmks.html)
+* [OpenShift](https://skupper.io/start/openshift.html)
+* [More providers](https://kubernetes.io/partners/#kcsp)
 
-2. Assign the target process to the service in `host.docker.internal:host-gateway` format
+## Step 3: Set up your namespaces
 
-```
-$ ./skupper-docker bind tcp-go-echo host-service host.docker.internal:host-gateway
-```
+Use `kubectl create namespace` to create the namespaces you wish
+to use (or use existing namespaces).  Use `kubectl config
+set-context` to set the current namespace for each session.
 
-4. Check the exposed service
+_**Console for public:**_
 
-```
-$ ./skupper-docker list-exposed
-Services exposed through Skupper:
-    tcp-go-echo (tcp port 9090) with targets
-      => internal.skupper.io/host-service name=host.docker.internal:host-gateway
+~~~ shell
+kubectl create namespace public
+kubectl config set-context --current --namespace public
+~~~
 
-Aliases for services exposed through Skupper:
-    172.18.0.4 tcp-go-echo
-```
+_Sample output:_
 
-To attach a remote host process to the Skupper network:
+~~~ console
+$ kubectl create namespace public
+namespace/public created
 
-1. Start the process on the remote host
+$ kubectl config set-context --current --namespace public
+Context "minikube" modified.
+~~~
 
-2. Determine the IP address of the remote host (for example 192.168.22.15) and ensure it is reachable (e.g ping)
+_**Console for private:**_
 
-3. Create the service as described above
+~~~ shell
+kubectl create namespace private
+kubectl config set-context --current --namespace private
+~~~
 
-4. Assign the target remote host process to the service in `name:address` format
+_Sample output:_
 
-```
-$ ./skupper-docker bind tcp-go-echo host-service myechoserver:192.168.22.15
-```
+~~~ console
+$ kubectl create namespace private
+namespace/private created
 
-4. Check the exposed service
+$ kubectl config set-context --current --namespace private
+Context "minikube" modified.
+~~~
 
-```
-$ ./skupper-docker list-exposed
-Services exposed through Skupper:
-    tcp-go-echo (tcp port 9090) with targets
-      => internal.skupper.io/host-service name=myechoserver:192.168.22.15
+## Step 4: Install Skupper in your namespaces
 
-Aliases for services exposed through Skupper:
-    172.18.0.4 tcp-go-echo
-```
+The `skupper init` command installs the Skupper router and service
+controller in the current namespace.  Run the `skupper init` command
+in each namespace.
 
-Note that multiple targets can be concurrently assigned to a service.
+**Note:** If you are using Minikube, [you need to start `minikube
+tunnel`][minikube-tunnel] before you install Skupper.
+
+[minikube-tunnel]: https://skupper.io/start/minikube.html#running-minikube-tunnel
+
+_**Console for public:**_
+
+~~~ shell
+skupper init
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper init
+Waiting for LoadBalancer IP or hostname...
+Skupper is now installed in namespace 'public'.  Use 'skupper status' to get more information.
+~~~
+
+_**Console for private:**_
+
+~~~ shell
+skupper init
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper init
+Waiting for LoadBalancer IP or hostname...
+Skupper is now installed in namespace 'private'.  Use 'skupper status' to get more information.
+~~~
+
+## Step 5: Check the status of your namespaces
+
+Use `skupper status` in each console to check that Skupper is
+installed.
+
+_**Console for public:**_
+
+~~~ shell
+skupper status
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper status
+Skupper is enabled for namespace "public" in interior mode. It is connected to 1 other site. It has 1 exposed service.
+The site console url is: <console-url>
+The credentials for internal console-auth mode are held in secret: 'skupper-console-users'
+~~~
+
+_**Console for private:**_
+
+~~~ shell
+skupper status
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper status
+Skupper is enabled for namespace "private" in interior mode. It is connected to 1 other site. It has 1 exposed service.
+The site console url is: <console-url>
+The credentials for internal console-auth mode are held in secret: 'skupper-console-users'
+~~~
+
+As you move through the steps below, you can use `skupper status` at
+any time to check your progress.
+
+## Step 6: Link your namespaces
+
+Creating a link requires use of two `skupper` commands in
+conjunction, `skupper token create` and `skupper link create`.
+
+The `skupper token create` command generates a secret token that
+signifies permission to create a link.  The token also carries the
+link details.  Then, in a remote namespace, The `skupper link
+create` command uses the token to create a link to the namespace
+that generated it.
+
+**Note:** The link token is truly a *secret*.  Anyone who has the
+token can link to your namespace.  Make sure that only those you
+trust have access to it.
+
+First, use `skupper token create` in one namespace to generate the
+token.  Then, use `skupper link create` in the other to create a
+link.
+
+_**Console for public:**_
+
+~~~ shell
+skupper token create ~/secret.token
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper token create ~/secret.token
+Token written to ~/secret.token
+~~~
+
+_**Console for private:**_
+
+~~~ shell
+skupper link create ~/secret.token
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper link create ~/secret.token
+Site configured to link to https://10.105.193.154:8081/ed9c37f6-d78a-11ec-a8c7-04421a4c5042 (name=link1)
+Check the status of the link using 'skupper link status'.
+~~~
+
+If your console sessions are on different machines, you may need
+to use `sftp` or a similar tool to transfer the token securely.
+By default, tokens expire after a single use or 15 minutes after
+creation.
+
+## Step 7: Deploy the message broker
+
+In the private namespace, use the `kubectl apply` command to
+install the broker.
+
+_**Console for private:**_
+
+~~~ shell
+kubectl apply -f broker
+~~~
+
+_Sample output:_
+
+~~~ console
+$ kubectl apply -f broker
+deployment.apps/broker created
+~~~
+
+## Step 8: Expose the message broker
+
+In the private namespace, use `skupper expose` to expose the
+broker on the Skupper network.
+
+Then, in the public namespace, use `kubectl get service/broker`
+to check that the service appears after a moment.
+
+_**Console for private:**_
+
+~~~ shell
+skupper expose deployment/broker --port 5672
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper expose deployment/broker --port 5672
+deployment broker exposed as broker
+~~~
+
+_**Console for public:**_
+
+~~~ shell
+kubectl get service/broker
+~~~
+
+_Sample output:_
+
+~~~ console
+$ kubectl get service/broker
+NAME     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+broker   ClusterIP   10.100.58.95   <none>        5672/TCP   2s
+~~~
+
+## Step 9: Run the client
+
+In the public namespace, use `kubectl run` to run the client.
+
+_**Console for public:**_
+
+~~~ shell
+kubectl run client --attach --rm --restart Never --image quay.io/skupper/activemq-example-client --env SERVER=broker
+~~~
+
+_Sample output:_
+
+~~~ console
+$ kubectl run client --attach --rm --restart Never --image quay.io/skupper/activemq-example-client --env SERVER=broker
+__  ____  __  _____   ___  __ ____  ______
+ --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
+ -/ /_/ / /_/ / __ |/ , _/ ,< / /_/ /\ \
+--\___\_\____/_/ |_/_/|_/_/|_|\____/___/
+2022-05-27 11:19:07,149 INFO  [io.sma.rea.mes.amqp] (main) SRMSG16201: AMQP broker configured to broker:5672 for channel incoming-messages
+2022-05-27 11:19:07,170 INFO  [io.sma.rea.mes.amqp] (main) SRMSG16201: AMQP broker configured to broker:5672 for channel outgoing-messages
+2022-05-27 11:19:07,198 INFO  [io.sma.rea.mes.amqp] (main) SRMSG16212: Establishing connection with AMQP broker
+2022-05-27 11:19:07,212 INFO  [io.sma.rea.mes.amqp] (main) SRMSG16212: Establishing connection with AMQP broker
+2022-05-27 11:19:07,215 INFO  [io.quarkus] (main) client 1.0.0-SNAPSHOT on JVM (powered by Quarkus 2.9.2.Final) started in 0.397s.
+2022-05-27 11:19:07,215 INFO  [io.quarkus] (main) Profile prod activated.
+2022-05-27 11:19:07,215 INFO  [io.quarkus] (main) Installed features: [cdi, smallrye-context-propagation, smallrye-reactive-messaging, smallrye-reactive-messaging-amqp, vertx]
+Sent message 1
+Sent message 2
+Sent message 3
+Sent message 4
+Sent message 5
+Sent message 6
+Sent message 7
+Sent message 8
+Sent message 9
+Sent message 10
+2022-05-27 11:19:07,434 INFO  [io.sma.rea.mes.amqp] (vert.x-eventloop-thread-0) SRMSG16213: Connection with AMQP broker established
+2022-05-27 11:19:07,442 INFO  [io.sma.rea.mes.amqp] (vert.x-eventloop-thread-0) SRMSG16213: Connection with AMQP broker established
+2022-05-27 11:19:07,468 INFO  [io.sma.rea.mes.amqp] (vert.x-eventloop-thread-0) SRMSG16203: AMQP Receiver listening address notifications
+Received message 1
+Received message 2
+Received message 3
+Received message 4
+Received message 5
+Received message 6
+Received message 7
+Received message 8
+Received message 9
+Received message 10
+Result: OK
+~~~
+
+## Accessing the web console
+
+Skupper includes a web console you can use to view the application
+network.  To access it, use `skupper status` to look up the URL of
+the web console.  Then use `kubectl get
+secret/skupper-console-users` to look up the console admin
+password.
+
+**Note:** The `<console-url>` and `<password>` fields in the
+following output are placeholders.  The actual values are specific
+to your environment.
+
+_**Console for public:**_
+
+~~~ shell
+skupper status
+kubectl get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper status
+Skupper is enabled for namespace "public" in interior mode. It is connected to 1 other site. It has 1 exposed service.
+The site console url is: <console-url>
+The credentials for internal console-auth mode are held in secret: 'skupper-console-users'
+
+$ kubectl get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
+<password>
+~~~
+
+Navigate to `<console-url>` in your browser.  When prompted, log
+in as user `admin` and enter the password.
+
+## Cleaning up
+
+To remove Skupper and the other resources from this exercise, use
+the following commands.
+
+_**Console for private:**_
+
+~~~ shell
+kubectl delete -f broker
+skupper delete
+~~~
+
+_**Console for public:**_
+
+~~~ shell
+skupper delete
+~~~
+
+## Next steps
+
+
+Check out the other [examples][examples] on the Skupper website.
