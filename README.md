@@ -307,6 +307,7 @@ _Sample output:_
 $ oc get service/ns-broker
 NAME        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)     AGE
 ns-broker   ClusterIP   172.30.97.216   <none>        61616/TCP   2m43s~~~
+~~~
 
 ## Step 9: Run the client
 
