@@ -1,17 +1,6 @@
-# Accessing an ActiveMQ message broker using Skupper
-
-[![main](https://github.com/skupperproject/skupper-example-activemq/actions/workflows/main.yaml/badge.svg)](https://github.com/skupperproject/skupper-example-activemq/actions/workflows/main.yaml)
+# Connecting an ANQ broker and an AMQP client deployed on separate sites
 
 #### Use public cloud resources to process data from a private message broker
-
-
-This example is part of a [suite of examples][examples] showing the
-different ways you can use [Skupper][website] to connect services
-across cloud providers, data centers, and edge sites.
-
-[website]: https://skupper.io/
-[examples]: https://skupper.io/examples/index.html
-
 
 #### Contents
 
@@ -32,27 +21,20 @@ across cloud providers, data centers, and edge sites.
 ## Overview
 
 This example is a simple messaging application that shows how you
-can use Skupper to access an ActiveMQ broker at a remote site
+can use Skupper to access an AMQ broker at a remote site
 without exposing it to the public internet.
 
 It contains two services:
 
-* An ActiveMQ broker running in a private data center.  The broker
-  has a queue named "notifications".
+* An AMQ broker running in OCP cliester OCP1. The broker
+  has a queue named "broker1".
 
-* An AMQP client running in the public cloud.  It sends 10 messages
-  to "notifications" and then receives them back.
+* An AMQP client running in OCP cliester OCP2. We will logon with a terminal 
+  and run producerd and consumers.
 
-For the broker, this example uses the [Apache ActiveMQ
-Artemis][artemis] image from [ArtemisCloud.io][artemiscloud].  The
-client is a simple [Quarkus][quarkus] application.
+For the broker, this example uses the the ANQ broker operator.
 
-The example uses two Kubernetes namespaces, "private" and "public",
-to represent the private data center and public cloud.
-
-[artemis]: https://activemq.apache.org/components/artemis/
-[artemiscloud]: https://artemiscloud.io/
-[quarkus]: https://quarkus.io/
+The example uses two OpenShift namespaces, "OC1" and "OC2".
 
 ## Prerequisites
 
