@@ -56,7 +56,7 @@ namespace where it operates.
 [kubeconfig]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 
 Your kubeconfig is stored in a file in your home directory.  The
-`skupper` and `kubectl` commands use the `KUBECONFIG` environment
+`skupper` and `oc` commands use the `KUBECONFIG` environment
 variable to locate it.
 
 A single kubeconfig supports only one active context per user.
@@ -96,9 +96,8 @@ session.  See the following links for more information:
 
 ## Step 3: Set up your namespaces
 
-Use `kubectl create namespace` to create the namespaces you wish
-to use (or use existing namespaces).  Use `kubectl config
-set-context` to set the current namespace for each session.
+Use `oc create namespace` to create the namespaces you wish
+to use (or use existing namespaces).  Use `oc project` to set the current namespace for each session.
 
 _**Console for ns1:**_
 
@@ -271,7 +270,7 @@ oc apply -f broker1.yaml
 _Sample output:_
 
 ~~~ console
-oc apply -f broker1.yaml
+$ oc apply -f broker1.yaml
 activemqartemis.broker.amq.io/broker1 created
 ~~~
 
@@ -280,39 +279,38 @@ activemqartemis.broker.amq.io/broker1 created
 In the ns1 namespace, use `skupper expose` to expose the
 broker on the Skupper network.
 
-Then, in the ns2 namespace, use `oc get service/broker1`
+Then, in the ns2 namespace, use `oc get service/ns-broker`
 to check that the service appears after a moment.
 
 _**Console for ns1:**_
 
 ~~~ shell
-skupper expose statefulset/broker1-ss --port 61616
+skupper expose statefulset/broker1-ss --port 61616 --address ns-broker
 ~~~
 
 _Sample output:_
 
 ~~~ console
-skupper expose statefulset/broker1-ss --port 61616
-statefulset broker1-ss exposed as broker1-ss
+$ skupper expose statefulset/broker1-ss --port 61616 --address ns-broker
+statefulset broker1-ss exposed as ns-broker
 ~~~
 
-_**Console for public:**_
+_**Console for ns2:**_
 
 ~~~ shell
-oc get service/broker1
+oc get service/ns-broker
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ oc get service/broker1
-NAME     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
-broker   ClusterIP   10.100.58.95   <none>        5672/TCP   2s
-~~~
+$ oc get service/ns-broker
+NAME        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)     AGE
+ns-broker   ClusterIP   172.30.97.216   <none>        61616/TCP   2m43s~~~
 
 ## Step 9: Run the client
 
-In the public namespace, use `kubectl run` to run the client.
+In the public namespace, use `oc new-app` to deploy the client.
 
 _**Console for public:**_
 
@@ -323,49 +321,23 @@ oc new-app quay.io/mdiscepo/simple-shell@sha256:e2036d219b69580f2dff57426754597b
 _Sample output:_
 
 ~~~ console
-$ kubectl run client --attach --rm --restart Never --image quay.io/skupper/activemq-example-client --env SERVER=broker
-__  ____  __  _____   ___  __ ____  ______
- --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
- -/ /_/ / /_/ / __ |/ , _/ ,< / /_/ /\ \
---\___\_\____/_/ |_/_/|_/_/|_|\____/___/
-2022-05-27 11:19:07,149 INFO  [io.sma.rea.mes.amqp] (main) SRMSG16201: AMQP broker configured to broker:5672 for channel incoming-messages
-2022-05-27 11:19:07,170 INFO  [io.sma.rea.mes.amqp] (main) SRMSG16201: AMQP broker configured to broker:5672 for channel outgoing-messages
-2022-05-27 11:19:07,198 INFO  [io.sma.rea.mes.amqp] (main) SRMSG16212: Establishing connection with AMQP broker
-2022-05-27 11:19:07,212 INFO  [io.sma.rea.mes.amqp] (main) SRMSG16212: Establishing connection with AMQP broker
-2022-05-27 11:19:07,215 INFO  [io.quarkus] (main) client 1.0.0-SNAPSHOT on JVM (powered by Quarkus 2.9.2.Final) started in 0.397s.
-2022-05-27 11:19:07,215 INFO  [io.quarkus] (main) Profile prod activated.
-2022-05-27 11:19:07,215 INFO  [io.quarkus] (main) Installed features: [cdi, smallrye-context-propagation, smallrye-reactive-messaging, smallrye-reactive-messaging-amqp, vertx]
-Sent message 1
-Sent message 2
-Sent message 3
-Sent message 4
-Sent message 5
-Sent message 6
-Sent message 7
-Sent message 8
-Sent message 9
-Sent message 10
-2022-05-27 11:19:07,434 INFO  [io.sma.rea.mes.amqp] (vert.x-eventloop-thread-0) SRMSG16213: Connection with AMQP broker established
-2022-05-27 11:19:07,442 INFO  [io.sma.rea.mes.amqp] (vert.x-eventloop-thread-0) SRMSG16213: Connection with AMQP broker established
-2022-05-27 11:19:07,468 INFO  [io.sma.rea.mes.amqp] (vert.x-eventloop-thread-0) SRMSG16203: AMQP Receiver listening address notifications
-Received message 1
-Received message 2
-Received message 3
-Received message 4
-Received message 5
-Received message 6
-Received message 7
-Received message 8
-Received message 9
-Received message 10
-Result: OK
+$ oc new-app quay.io/mdiscepo/simple-shell@sha256:e2036d219b69580f2dff57426754597b28dd7f67010df538dfe614fa4082e3fb
+--> Found container image a1bec26 (5 months old) from quay.io for "quay.io/mdiscepo/simple-shell@sha256:e2036d219b69580f2dff57426754597b28dd7f67010df538dfe614fa4082e3fb"
+
+    * An image stream tag will be created as "simple-shell:latest" that will track this image
+
+--> Creating resources ...
+    imagestream.image.openshift.io "simple-shell" created
+    deployment.apps "simple-shell" created
+--> Success
+    Run 'oc status' to view your app.
 ~~~
 
 ## Accessing the web console
 
 Skupper includes a web console you can use to view the application
 network.  To access it, use `skupper status` to look up the URL of
-the web console.  Then use `kubectl get
+the web console.  Then use `oc get
 secret/skupper-console-users` to look up the console admin
 password.
 
@@ -373,27 +345,40 @@ password.
 following output are placeholders.  The actual values are specific
 to your environment.
 
-_**Console for public:**_
+_**Console for ns1:**_
 
 ~~~ shell
 skupper status
-kubectl get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
+oc get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
 ~~~
 
 _Sample output:_
 
 ~~~ console
 $ skupper status
-Skupper is enabled for namespace "public" in interior mode. It is connected to 1 other site. It has 1 exposed service.
+Skupper is enabled for namespace "ns1" in interior mode. It is connected to 1 other site. It has 1 exposed service.
 The site console url is: <console-url>
 The credentials for internal console-auth mode are held in secret: 'skupper-console-users'
 
-$ kubectl get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
+$ oc get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
 <password>
 ~~~
 
 Navigate to `<console-url>` in your browser.  When prompted, log
 in as user `admin` and enter the password.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Cleaning up
 
