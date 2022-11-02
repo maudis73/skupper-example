@@ -313,7 +313,7 @@ ns-broker   ClusterIP   172.30.97.216   <none>        61616/TCP   2m43s~~~
 
 In the public namespace, use `oc new-app` to deploy the client.
 
-_**Console for public:**_
+_**Console for ns2:**_
 
 ~~~ shell
 oc new-app quay.io/mdiscepo/simple-shell@sha256:e2036d219b69580f2dff57426754597b28dd7f67010df538dfe614fa4082e3fb
