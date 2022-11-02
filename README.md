@@ -1,4 +1,4 @@
-# Connecting an ANQ broker and an AMQP client deployed on separate sites
+# Connecting an AMQ broker and an AMQP client deployed on separate sites
 
 #### Use public cloud resources to process data from a private message broker
 
@@ -32,18 +32,15 @@ It contains two services:
 * An AMQP client running in OCP cliester OCP2. We will logon with a terminal 
   and run producerd and consumers.
 
-For the broker, this example uses the the ANQ broker operator.
+For the broker, this example uses the the AMQ broker operator.
 
 The example uses two OpenShift namespaces, "OC1" and "OC2".
 
 ## Prerequisites
 
+* The `oc` command-line tool
 
-* The `kubectl` command-line tool, version 1.15 or later
-  ([installation guide][install-kubectl])
-
-* The `skupper` command-line tool, the latest version ([installation
-  guide][install-skupper])
+* The `skupper` command-line tool
 
 * Access to at least one Kubernetes cluster, from any provider you
   choose
