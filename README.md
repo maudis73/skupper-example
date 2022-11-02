@@ -15,7 +15,7 @@
 * [Step 7: Deploy the message broker](#step-7-deploy-the-message-broker)
 * [Step 8: Expose the message broker](#step-8-expose-the-message-broker)
 * [Step 9: Deploy the client](#step-9-deploy-the-client)
-* [Step 10: Run the client](#srep-10-run-the-client)
+* [Step 10: Run the client](#step-10-run-the-client)
 * [Accessing the web console](#accessing-the-web-console)
 * [Cleaning up](#cleaning-up)
 
