@@ -1,0 +1,29 @@
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+  name: broker1
+spec:
+  acceptors:
+    - name: amqp-acceptor
+      port: 61616
+      protocols: amqp
+      expose: true
+    - name: mqtt-acceptor
+      port: 61617
+      protocols: mqtt
+      expose: true
+  console:
+    expose: true
+  deploymentPlan:
+    image: placeholder
+    size: 1
+    requireLogin: false
+    persistenceEnabled: true
+    journalType: aio
+    messageMigration: false
+    jolokiaAgentEnabled: false
+    managementRBACEnabled: true
+    clustered: false
+  adminUser: admin
+  adminPassword: admin
+
