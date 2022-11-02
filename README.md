@@ -36,17 +36,14 @@ For the broker, this example uses the the AMQ broker operator.
 
 The example uses two OpenShift namespaces, "OC1" and "OC2".
 
+
 ## Prerequisites
 
 * The `oc` command-line tool
 
 * The `skupper` command-line tool
 
-* Access to at least one Kubernetes cluster, from any provider you
-  choose
-
-[install-kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[install-skupper]: https://skupper.io/install/index.html
+* Access to at least one both OCP clusters
 
 
 ## Step 1: Configure separate console sessions
@@ -70,16 +67,16 @@ Start a console session for each of your namespaces.  Set the
 `KUBECONFIG` environment variable to a different path in each
 session.
 
-_**Console for public:**_
+_**Console for ns1:**_
 
 ~~~ shell
-export KUBECONFIG=~/.kube/config-public
+export KUBECONFIG=~/.kube/config-ns1
 ~~~
 
-_**Console for private:**_
+_**Console for ns2:**_
 
 ~~~ shell
-export KUBECONFIG=~/.kube/config-private
+export KUBECONFIG=~/.kube/config-ns2
 ~~~
 
 ## Step 2: Access your clusters
@@ -103,38 +100,38 @@ Use `kubectl create namespace` to create the namespaces you wish
 to use (or use existing namespaces).  Use `kubectl config
 set-context` to set the current namespace for each session.
 
-_**Console for public:**_
+_**Console for ns1:**_
 
 ~~~ shell
-kubectl create namespace public
-kubectl config set-context --current --namespace public
+oc create namespace ns1
+oc project ns1
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ kubectl create namespace public
-namespace/public created
+$ oc create namespace ns1
+namespace/ns1 created
 
-$ kubectl config set-context --current --namespace public
-Context "minikube" modified.
+$ oc project ns1
+Now using project "ns1" on server ....
 ~~~
 
-_**Console for private:**_
+_**Console for ns2:**_
 
 ~~~ shell
-kubectl create namespace private
-kubectl config set-context --current --namespace private
+oc create namespace ns2
+oc project ns2
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ kubectl create namespace private
-namespace/private created
+$ oc create namespace ns2
+namespace/ns1 created
 
-$ kubectl config set-context --current --namespace private
-Context "minikube" modified.
+$ oc project ns2
+Now using project "ns2" on server ....
 ~~~
 
 ## Step 4: Install Skupper in your namespaces
@@ -143,12 +140,7 @@ The `skupper init` command installs the Skupper router and service
 controller in the current namespace.  Run the `skupper init` command
 in each namespace.
 
-**Note:** If you are using Minikube, [you need to start `minikube
-tunnel`][minikube-tunnel] before you install Skupper.
-
-[minikube-tunnel]: https://skupper.io/start/minikube.html#running-minikube-tunnel
-
-_**Console for public:**_
+_**Console for ns2:**_
 
 ~~~ shell
 skupper init
@@ -159,10 +151,10 @@ _Sample output:_
 ~~~ console
 $ skupper init
 Waiting for LoadBalancer IP or hostname...
-Skupper is now installed in namespace 'public'.  Use 'skupper status' to get more information.
+Skupper is now installed in namespace 'ns1'.  Use 'skupper status' to get more information.
 ~~~
 
-_**Console for private:**_
+_**Console for ns2:**_
 
 ~~~ shell
 skupper init
@@ -173,7 +165,7 @@ _Sample output:_
 ~~~ console
 $ skupper init
 Waiting for LoadBalancer IP or hostname...
-Skupper is now installed in namespace 'private'.  Use 'skupper status' to get more information.
+Skupper is now installed in namespace 'ns2'.  Use 'skupper status' to get more information.
 ~~~
 
 ## Step 5: Check the status of your namespaces
@@ -181,7 +173,7 @@ Skupper is now installed in namespace 'private'.  Use 'skupper status' to get mo
 Use `skupper status` in each console to check that Skupper is
 installed.
 
-_**Console for public:**_
+_**Console for ns1:**_
 
 ~~~ shell
 skupper status
@@ -191,12 +183,12 @@ _Sample output:_
 
 ~~~ console
 $ skupper status
-Skupper is enabled for namespace "public" in interior mode. It is connected to 1 other site. It has 1 exposed service.
+Skupper is enabled for namespace "ns1" in interior mode. It is connected to 1 other site. It has 1 exposed service.
 The site console url is: <console-url>
 The credentials for internal console-auth mode are held in secret: 'skupper-console-users'
 ~~~
 
-_**Console for private:**_
+_**Console for ns2:**_
 
 ~~~ shell
 skupper status
@@ -206,7 +198,7 @@ _Sample output:_
 
 ~~~ console
 $ skupper status
-Skupper is enabled for namespace "private" in interior mode. It is connected to 1 other site. It has 1 exposed service.
+Skupper is enabled for namespace "ns2" in interior mode. It is connected to 1 other site. It has 1 exposed service.
 The site console url is: <console-url>
 The credentials for internal console-auth mode are held in secret: 'skupper-console-users'
 ~~~
@@ -233,7 +225,7 @@ First, use `skupper token create` in one namespace to generate the
 token.  Then, use `skupper link create` in the other to create a
 link.
 
-_**Console for public:**_
+_**Console for ns1:**_
 
 ~~~ shell
 skupper token create ~/secret.token
@@ -246,7 +238,7 @@ $ skupper token create ~/secret.token
 Token written to ~/secret.token
 ~~~
 
-_**Console for private:**_
+_**Console for ns2:**_
 
 ~~~ shell
 skupper link create ~/secret.token
@@ -267,19 +259,19 @@ creation.
 
 ## Step 7: Deploy the message broker
 
-In the private namespace, use the `kubectl apply` command to
+In the ns1 namespace, use the `oc apply` command to
 install the broker.
 
-_**Console for private:**_
+_**Console for ns1:**_
 
 ~~~ shell
-kubectl apply -f broker
+oc apply -f broker
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ kubectl apply -f broker
+oc apply -f broker
 deployment.apps/broker created
 ~~~
 
