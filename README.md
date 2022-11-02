@@ -15,7 +15,7 @@
 * [Step 7: Deploy the message broker](#step-7-deploy-the-message-broker)
 * [Step 8: Expose the message broker](#step-8-expose-the-message-broker)
 * [Step 9: Deploy the client](#step-9-deploy-the-client)
-* [Step 9: Run the client](#srep-10-run-the-client)
+* [Step 10: Run the client](#srep-10-run-the-client)
 * [Accessing the web console](#accessing-the-web-console)
 * [Cleaning up](#cleaning-up)
 
@@ -335,7 +335,9 @@ $ oc new-app quay.io/mdiscepo/simple-shell@sha256:e2036d219b69580f2dff5742675459
     Run 'oc status' to view your app.
 ~~~
 
-## Run the client
+## Step 10: Run the client
+
+Connect to the ns2 namespace simple-shell pod's terminal.
 
 _**Console for simple-shell on ns2:**_
 
