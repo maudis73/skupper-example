@@ -6,7 +6,7 @@
 
 * [Overview](#overview)
 * [Prerequisites](#prerequisites)
-* [Step 1: Configure separate console sessions](#step-1-configure-separate-console-sessions)
+* [Step 1: Configure separate console sessions](#step-1-configure-separate-console-sessions)xx
 * [Step 2: Access your clusters](#step-2-access-your-clusters)
 * [Step 3: Set up your namespaces](#step-3-set-up-your-namespaces)
 * [Step 4: Install Skupper in your namespaces](#step-4-install-skupper-in-your-namespaces)
@@ -139,7 +139,7 @@ The `skupper init` command installs the Skupper router and service
 controller in the current namespace.  Run the `skupper init` command
 in each namespace.
 
-_**Console for ns2:**_
+_**Console for ns1:**_
 
 ~~~ shell
 skupper init
