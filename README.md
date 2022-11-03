@@ -1,6 +1,6 @@
 # Connecting an AMQ broker and an AMQP client deployed on separate sites
 
-#### Use public cloud resources to process data from a private message broker
+#### Connect multiple OCP sites and VM using Skupper
 
 #### Contents
 
@@ -16,11 +16,10 @@
 * [Step 8: Expose the message broker](#step-8-expose-the-message-broker)
 * [Step 9: Deploy the client](#step-9-deploy-the-client)
 * [Step 10: Run the client](#step-10-run-the-client)
-
 * [Step 11: Install the broker on your laprop](#step-12-install-the-laptop-broker)
 * [Step 12: Install the Skupper gateway](#step-12-install-the-skupper-gateway)
-* [Step 13: Expose the laptop broker](#step-11-expose-the-laptop-broker)
-
+* [Step 13: Expose the laptop broker](#step-13-expose-the-laptop-broker)
+* [Step 14: Connect to the laptop broker from ns2](#step-14-connect-to-the-laptop-broker-from-ns2)
 
 * [Accessing the web console](#accessing-the-web-console)
 * [Cleaning up](#cleaning-up)
@@ -31,17 +30,18 @@ This example is a simple messaging application that shows how you
 can use Skupper to access an AMQ broker at a remote site
 without exposing it to the public internet.
 
-It contains two services:
+It contains three services:
 
-* An AMQ broker running in OCP cliester OCP1. The broker
-  has a queue named "broker1".
+* An AMQ broker running in OCP cliester OCP1. 
 
-* An AMQP client running in OCP cliester OCP2. We will logon with a terminal 
-  and run producerd and consumers.
+* An AMQP client running in ns1 and ns2. We will logon with a terminal 
+  and run producers and consumers.
+
+* An AMQ broker running in on a VM.
 
 For the broker, this example uses the the AMQ broker operator.
 
-The example uses two OpenShift namespaces, "OC1" and "OC2".
+The example uses two OpenShift namespaces, "ns1" and "ns2".
 
 
 ## Prerequisites
@@ -400,20 +400,12 @@ Navigate to `<console-url>` in your browser.  When prompted, log
 in as user `admin` and enter the password.
 
 
-
-
-
-* [Step 11: Install the broker on your laprop](#step-12-install-the-laptop-broker)
-* [Step 12: Install the Skupper gateway](#step-12-install-the-skupper-gateway)
-* [Step 13: Expose the laptop broker](#step-11-expose-the-laptop-broker)
-
-
 ## Step 11: Install the laptop broker
 
-Follow the instructions in https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.10/html-single/getting_started_with_amq_broker/index#installing-broker-getting-started
+Follow the instructions in https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.10/html-single/getting_started_with_amq_broker/index#installing-broker-getting-started to install and start a samle broker.
 
 
-## Step 12:
+## Step 12: Intall the skupper gateway
 The `skupper gateway init` command starts a Skupper router on
 your local system and links it to the Skupper router in the
 current Kubernetes namespace.
@@ -455,6 +447,27 @@ $ skupper gateway bind backend localhost 8080
 ~~~
 
 
+## Step 14: Connect to the laptop broker from ns2
+
+Connect to the ns2 namespace simple-shell pod's terminal.
+
+_**Console for simple-shell on ns2:**_
+
+~~~ shell
+artemis queue stat --url tcp://ns-broker-local:61616
+~~~
+
+_Sample output:_
+
+~~~ console
+$ artemis queue stat --url tcp://ns-broker:61616
+Connection brokerURL = tcp://ns-broker:61616
+|NAME                     |ADDRESS                  |CONSUMER_COUNT |MESSAGE_COUNT |MESSAGES_ADDED |DELIVERING_COUNT |MESSAGES_ACKED |SCHEDULED_COUNT |ROUTING_TYPE |
+|DLQ                      |DLQ                      |0              |0             |0              |0                |0              |0               |ANYCAST      |
+|ExpiryQueue              |ExpiryQueue              |0              |0             |0              |0                |0              |0               |ANYCAST      |
+|TEST                     |TEST                     |0              |0             |0              |0                |0              |0               |ANYCAST      |
+|activemq.management.e7a18022-280b-45a6-a72b-fda18f884fde|activemq.management.e7a18022-280b-45a6-a72b-fda18f884fde|1              |0             |0              |0                |0              |0               |MULTICAST    |
+~~~
 
 
 ## Cleaning up
