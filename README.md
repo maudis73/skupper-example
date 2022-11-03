@@ -405,9 +405,9 @@ skupper gateway bind ns-broker-local localhost 61616
 _Sample output:_
 
 ~~~ console
-$ skupper service create backend 8080
+$ skupper service create ns-broker-local 61616
 
-$ skupper gateway bind backend localhost 8080
+$ skupper gateway bind ns-broker-local localhost 61616
 2022/11/03 15:24:43 CREATE io.skupper.router.tcpConnector fedora-4gb-hel1-1-mdiscepo-maudis-egress-ns-broker-local:61616 map[address:ns-broker-local:61616 host:localhost name:fedora-4gb-hel1-1-mdiscepo-maudis-egress-ns-broker-local:61616 port:61616 siteId:8b734fd8-32a1-4cfd-bfd8-dc29801dee0f]
 ~~~
 
@@ -425,7 +425,7 @@ artemis queue stat --url tcp://ns-broker-local:61616
 _Sample output:_
 
 ~~~ console
-$ artemis queue stat --url tcp://ns-broker:61616
+$ artemis queue stat --url tcp://ns-broker-local:61616
 Connection brokerURL = tcp://ns-broker:61616
 |NAME                     |ADDRESS                  |CONSUMER_COUNT |MESSAGE_COUNT |MESSAGES_ADDED |DELIVERING_COUNT |MESSAGES_ACKED |SCHEDULED_COUNT |ROUTING_TYPE |
 |DLQ                      |DLQ                      |0              |0             |0              |0                |0              |0               |ANYCAST      |
