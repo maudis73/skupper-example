@@ -16,6 +16,12 @@
 * [Step 8: Expose the message broker](#step-8-expose-the-message-broker)
 * [Step 9: Deploy the client](#step-9-deploy-the-client)
 * [Step 10: Run the client](#step-10-run-the-client)
+
+* [Step 11: Install the broker on your laprop](#step-12-install-the-laptop-broker)
+* [Step 12: Install the Skupper gateway](#step-12-install-the-skupper-gateway)
+* [Step 13: Expose the laptop broker](#step-11-expose-the-laptop-broker)
+
+
 * [Accessing the web console](#accessing-the-web-console)
 * [Cleaning up](#cleaning-up)
 
@@ -335,6 +341,7 @@ $ oc new-app quay.io/mdiscepo/simple-shell@sha256:e2036d219b69580f2dff5742675459
     Run 'oc status' to view your app.
 ~~~
 
+
 ## Step 10: Run the client
 
 Connect to the ns2 namespace simple-shell pod's terminal.
@@ -396,9 +403,56 @@ in as user `admin` and enter the password.
 
 
 
+* [Step 11: Install the broker on your laprop](#step-12-install-the-laptop-broker)
+* [Step 12: Install the Skupper gateway](#step-12-install-the-skupper-gateway)
+* [Step 13: Expose the laptop broker](#step-11-expose-the-laptop-broker)
 
 
+## Step 11: Install the laptop broker
 
+Follow the instructions in https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.10/html-single/getting_started_with_amq_broker/index#installing-broker-getting-started
+
+
+## Step 12:
+The `skupper gateway init` command starts a Skupper router on
+your local system and links it to the Skupper router in the
+current Kubernetes namespace.
+
+_**Console for laptop:**_
+
+~~~ shell
+skupper gateway init --type podman
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper gateway init --type podman
+Skupper gateway: 'fedora-4gb-hel1-1-mdiscepo-maudis'. Use 'skupper gateway status' to get more information.
+~~~
+
+
+## Step 13: Expose the laptop broker
+
+Use `skupper service create` to define a Skupper service called
+`backend`.  Then use `skupper gateway bind` to attach your
+running backend process as a target for the service.
+
+_**Console for laptop:**_
+
+~~~ shell
+skupper service create ns-broker-local 61616
+skupper gateway bind ns-broker-local localhost 61616
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper service create backend 8080
+
+$ skupper gateway bind backend localhost 8080
+2022/11/03 15:24:43 CREATE io.skupper.router.tcpConnector fedora-4gb-hel1-1-mdiscepo-maudis-egress-ns-broker-local:61616 map[address:ns-broker-local:61616 host:localhost name:fedora-4gb-hel1-1-mdiscepo-maudis-egress-ns-broker-local:61616 port:61616 siteId:8b734fd8-32a1-4cfd-bfd8-dc29801dee0f]
+~~~
 
 
 
