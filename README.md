@@ -365,41 +365,6 @@ Connection brokerURL = tcp://ns-broker:61616
 ~~~
 
 
-## Accessing the web console
-
-Skupper includes a web console you can use to view the application
-network.  To access it, use `skupper status` to look up the URL of
-the web console.  Then use `oc get
-secret/skupper-console-users` to look up the console admin
-password.
-
-**Note:** The `<console-url>` and `<password>` fields in the
-following output are placeholders.  The actual values are specific
-to your environment.
-
-_**Console for ns1:**_
-
-~~~ shell
-skupper status
-oc get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
-~~~
-
-_Sample output:_
-
-~~~ console
-$ skupper status
-Skupper is enabled for namespace "ns1" in interior mode. It is connected to 1 other site. It has 1 exposed service.
-The site console url is: <console-url>
-The credentials for internal console-auth mode are held in secret: 'skupper-console-users'
-
-$ oc get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
-<password>
-~~~
-
-Navigate to `<console-url>` in your browser.  When prompted, log
-in as user `admin` and enter the password.
-
-
 ## Step 11: Install the laptop broker
 
 Follow the instructions in https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.10/html-single/getting_started_with_amq_broker/index#installing-broker-getting-started to install and start a samle broker.
@@ -468,6 +433,42 @@ Connection brokerURL = tcp://ns-broker:61616
 |TEST                     |TEST                     |0              |0             |0              |0                |0              |0               |ANYCAST      |
 |activemq.management.e7a18022-280b-45a6-a72b-fda18f884fde|activemq.management.e7a18022-280b-45a6-a72b-fda18f884fde|1              |0             |0              |0                |0              |0               |MULTICAST    |
 ~~~
+
+
+
+## Accessing the web console
+
+Skupper includes a web console you can use to view the application
+network.  To access it, use `skupper status` to look up the URL of
+the web console.  Then use `oc get
+secret/skupper-console-users` to look up the console admin
+password.
+
+**Note:** The `<console-url>` and `<password>` fields in the
+following output are placeholders.  The actual values are specific
+to your environment.
+
+_**Console for ns1:**_
+
+~~~ shell
+skupper status
+oc get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
+~~~
+
+_Sample output:_
+
+~~~ console
+$ skupper status
+Skupper is enabled for namespace "ns1" in interior mode. It is connected to 1 other site. It has 1 exposed service.
+The site console url is: <console-url>
+The credentials for internal console-auth mode are held in secret: 'skupper-console-users'
+
+$ oc get secret/skupper-console-users -o jsonpath={.data.admin} | base64 -d
+<password>
+~~~
+
+Navigate to `<console-url>` in your browser.  When prompted, log
+in as user `admin` and enter the password.
 
 
 ## Cleaning up
