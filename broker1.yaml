@@ -4,13 +4,9 @@ metadata:
   name: broker1
 spec:
   acceptors:
-    - name: amqp-acceptor
+    - name: acceptor
       port: 61616
-      protocols: amqp
-      expose: true
-    - name: mqtt-acceptor
-      port: 61617
-      protocols: mqtt
+      protocols: amqp,mqtt
       expose: true
   console:
     expose: true
