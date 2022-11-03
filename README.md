@@ -405,7 +405,7 @@ in as user `admin` and enter the password.
 Follow the instructions in https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.10/html-single/getting_started_with_amq_broker/index#installing-broker-getting-started to install and start a samle broker.
 
 
-## Step 12: Intall the skupper gateway
+## Step 12: Install the skupper gateway
 The `skupper gateway init` command starts a Skupper router on
 your local system and links it to the Skupper router in the
 current Kubernetes namespace.
